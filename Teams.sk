@@ -12,7 +12,6 @@ Options:
 #{Team.%integer%::*}		- list of "text"	- player names in that team (TEXT!)
 #{Teams.InTeam::%player%}	- integer/null		- what team is player in?
 
-#{TeamBoxWarps::%number%}	- list of locations
 
 #commands
 #/team help
@@ -22,11 +21,8 @@ Options:
 #/team join <id> [<player>]
 #/team leave [<player>]
 #/team color
-#/team uncolor
 #/team solos
 #/team soloinform
-#/team tpbox
-#/team setboxwarp <id>
 #/team rebuild
 #/team random <team size> <team amount>
 #/team reset
@@ -59,8 +55,6 @@ command /team [<text>] [<text>] [<text>] [<text>] [<text>]:
 				message "§6/team uncolor §4- §7Decolor all teams"
 				message "§6/team solos §4- §7View online players not in teams"
 				message "§6/team soloinform §4- §7Tell solos to re-/helpop"
-				message "§6/team tpbox §4- §7Teleport Teams into boxes"
-				message "§6/team setboxwarp <id> §4- §7Set Teamboxwarp for <id>"
 				message "§6/team rebuild §4- §7Rebuild teams, skip empty"
 				message "§6/team random <size> <amount> [extend] §4- §7Create Random Teams"
 				message "§6/team reset §4- §7Reset all teams"
@@ -249,26 +243,7 @@ command /team [<text>] [<text>] [<text>] [<text>] [<text>]:
 		
 
 		
-		else if arg 1 is equal to "uncolor":
-			if command sender does not have the permission "teams.uncolor":
-				message "{@P} §4Permission denied. §r(missing ""teams.uncolor"")"
-			else if arg 2 is set:
-				message "{@P} {@IS}"
-			else if {Teams::*} is not set:
-				message "{@P} No teams to uncolor!"
-			else:
-				loop {Teams::*}:
-					command "/scoreboard teams option UHC%loop-value% color reset"
-					loop {Team.%loop-value%::*}:
-						message "{@P} Your Team color was removed." to ("%loop-value-2%" parsed as offlineplayer)
-					
-				message "{@P} Uncolored all teams"
-				loop all players:
-					loop-player has the permission "teams.uncolor.notify"
-					loop-player is not command sender
-					message "{@P} {@N} Uncolored all teams" to loop-player
-					
-					
+
 					
 		else if arg 1 is equal to "solos":
 			if command sender does not have the permission "teams.solos":
@@ -305,54 +280,7 @@ command /team [<text>] [<text>] [<text>] [<text>] [<text>]:
 				message "{@P} Informed Solos"
 					
 					
-		else if arg 1 is equal to "tpbox":
-			if command sender does not have the permission "teams.tpbox":
-				message "{@P} §4Permission denied. §r(missing ""teams.tpbox"")"
-			else if arg 2 is set:
-				message "{@P} {@IS}"
-			else if (size of {TeamBoxWarps::*}) is smaller than (size of {Teams::*}):
-				message "{@P} Too less warps!"
-			else:
-				set {_Count} to 0
-				loop {Teams::*}:
-					increase {_Count} by 1
-					loop {Team.%loop-value%::*}:
-						teleport ("%loop-value-2%" parsed as offlineplayer) to {TeamBoxWarps::%{_Count}%}
-				
-				message "{@P} Teleported Teams in Boxes"
-				loop all players:
-					loop-player has the permission "teams.tpbox.notify"
-					loop-player is not command sender
-					message "{@P} {@N} Teleported Teams in Boxes" to loop-player
-					
-					
-		else if arg 1 is equal to "setboxwarp":
-			if command sender is console:
-				message "{@P} {@IS}"
-			if command sender does not have the permission "teams.setboxwarp":
-				message "{@P} §4Permission denied. §r(missing ""teams.setboxwarp"")"
-			else if arg 2 is not set:
-				message "{@P} {@IS}"
-			else if arg 3 is set:
-				message "{@P} {@IS}"
-			else:
-				set {_WarpNumber} to ("%arg 2%" parsed as integer)
-				if {_WarpNumber} is not set:
-					message "{@P} {@IS}"
-				else if {_WarpNumber} is smaller than 1:
-					message "{@P} {@IS}"
-				else:
-					if {_WarpNumber} is not equal to 1:
-						set {_TestWarpNumber} to {_WarpNumber}-1
-						if {TeamBoxWarps::%{_TestWarpNumber}%} is not set:
-							message "{@P} The previous warp %{_TestWarpNumber}% is not set!"
-							stop
-					
-					
-					set {TeamBoxWarps::%{_WarpNumber}%} to (location of (block at command sender))
-					message "{@P} Configured Warp %{_WarpNumber}% to %{TeamBoxWarps::%{_WarpNumber}%}%"
-					
-					
+
 					
 		else if arg 1 is equal to "rebuild":
 			if command sender does not have the permission "teams.rebuild":
