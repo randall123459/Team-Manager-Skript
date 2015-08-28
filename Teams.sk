@@ -5,6 +5,100 @@ Options:
   C:
   H:
 
+command /pm <text>:
+	usage: /pm <message>
+	trigger:
+		if {teammanagementvariable} is true:
+			if {playerisinateamvariable} is true:
+				loop all players:
+					if {inthecommandsendersteam::loop-playervariable} is true:
+						message "{@BC}[{@C}PM{@BC}]{@H} %command sender%{@BC}:{@C} %arg-1%" to loop-player
+		else:
+			message "{@P}{@C} Team Management Is {@H}Disabled{@C}!"
+			else:
+				message "{@P}{@C} You Are Not In a Team!"
+					else:
+						message "{@P}{@C} You Are The Only Player In Your Team!"
+						
+command /pmcoords <text>:
+	aliases; /tl, /teamlocation, /teamloc, /pmcords
+	trigger:
+		if {teammanagementvariable} is true:
+			if {playerisinateamvariable} is true:
+				loop all players:
+					if {inthecommandsendersteam::loop-playervariable} is true:
+						message "{@BC}[{@C}PM{@BC}]{@H} %command sender% {@C} Is At {@H}{@C}X {@H}%x coordinate of command sender%{@BC},{@C} Y{@H}%y coordinate of command sender%{@BC}, {@C}Z {@H}%x coordinate of command sender%" to loop-player
+		else:
+			message "{@P}{@C} Team Management Is {@H}Disabled{@C}!"
+			else:
+				message "{@P}{@C} You Are Not In a Team!"
+					else:
+						message "{@P}{@C} You Are The Only Player In Your Team!"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #variables
 #{Teams::%id%}				- list of integer	- all team numbers currently active
 #loop-index = loop-value - so {Teams::%id%} to check if team exists
