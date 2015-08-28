@@ -5,3 +5,605 @@ Options:
   C:
   H:
 
+#variables
+#{Teams::%id%}				- list of integer	- all team numbers currently active
+#loop-index = loop-value - so {Teams::%id%} to check if team exists
+
+#{Team.%integer%::*}		- list of "text"	- player names in that team (TEXT!)
+#{Teams.InTeam::%player%}	- integer/null		- what team is player in?
+
+#{TeamBoxWarps::%number%}	- list of locations
+
+#commands
+#/team help
+#/team list
+#/team create <id> 
+#/team delete <id>
+#/team join <id> [<player>]
+#/team leave [<player>]
+#/team color
+#/team uncolor
+#/team solos
+#/team soloinform
+#/team tpbox
+#/team setboxwarp <id>
+#/team rebuild
+#/team random <team size> <team amount>
+#/team reset
+
+options:
+	P: §7[§bTeams§7]§r
+	N: §4§o%command sender%:§r
+	
+	IS: Invalid Syntax. §b/team help§r?
+	
+command /team [<text>] [<text>] [<text>] [<text>] [<text>]:
+	trigger:
+	
+		if arg 1 is not set:
+			command sender command "/team help"
+		
+		
+		
+		else if arg 1 is equal to "help":
+			if command sender does not have the permission "teams.help":
+				message "{@P} §4Permission denied. §r(missing ""teams.help"")"
+			else:
+				message "§6/team help §4- §7This help page"
+				message "§6/team list §4- §7List teams"
+				message "§6/team create [<id>] §4- §7Create Team"
+				message "§6/team delete <id> §4- §7Delete Team"
+				message "§6/team join <id> [<player=you>] §4- §7Put <player> in Team"
+				message "§6/team leave [<player=you>] §4- §7Remove <player> from Team"
+				message "§6/team color §4- §7Color all teams at once"
+				message "§6/team uncolor §4- §7Decolor all teams"
+				message "§6/team solos §4- §7View online players not in teams"
+				message "§6/team soloinform §4- §7Tell solos to re-/helpop"
+				message "§6/team tpbox §4- §7Teleport Teams into boxes"
+				message "§6/team setboxwarp <id> §4- §7Set Teamboxwarp for <id>"
+				message "§6/team rebuild §4- §7Rebuild teams, skip empty"
+				message "§6/team random <size> <amount> [extend] §4- §7Create Random Teams"
+				message "§6/team reset §4- §7Reset all teams"
+		
+		
+		
+		else if arg 1 is equal to "list":
+			if {Teams::*} is not set:
+				message "{@P} No teams defined."
+			else:
+				loop {Teams::*}:
+					message "§6Team %loop-value%:"
+					loop {Team.%loop-value%::*}:
+						message "§7§l- §c§o%loop-value-2%"
+		
+		
+		
+		else if arg 1 is equal to "create":
+			if command sender does not have the permission "teams.create":
+				message "{@P} §4Permission denied. §r(missing ""teams.create"")"
+			else if arg 2 is not set:
+				message "{@P} {@IS}"
+			else if arg 3 is set:
+				message "{@P} {@IS}"
+			else:
+				set {_TeamNumber} to ("%arg 2%" parsed as integer)
+				if {_TeamNumber} is not set:
+					message "{@P} {@IS}"
+				else if {_TeamNumber} is smaller than 1:
+					message "{@P} Invalid Team Number!"
+				else if {Teams::%{_TeamNumber}%} is set:
+					message "{@P} That team already exists."
+				else:
+					set {Teams::%{_TeamNumber}%} to {_TeamNumber}
+					command "/scoreboard teams add UHC%{_TeamNumber}%"
+					
+					message "{@P} Created Team §6%{_TeamNumber}%"
+					loop all players:
+						loop-player has the permission "teams.create.notify"
+						loop-player is not command sender
+						message "{@P} {@N} Created Team§6%{_TeamNumber}%" to loop-player
+		
+		
+		
+		else if arg 1 is equal to "delete":
+			if command sender does not have the permission "teams.delete":
+				message "{@P} §4Permission denied. §r(missing ""teams.delete"")"
+			else if arg 2 is not set:
+				message "{@P} {@IS}"
+			else if arg 3 is set:
+				message "{@P} {@IS}"
+			else:
+				set {_TeamNumber} to ("%arg 2%" parsed as integer)
+				if {_TeamNumber} is not set:
+					message "{@P} {@IS}"
+				else if {_TeamNumber} is smaller than 1:
+					message "{@P} Invalid Team Number!"
+				else if {Teams::%{_TeamNumber}%} is not set:
+					message "{@P} That team does not exist."
+				else:
+					delete {Teams::%{_TeamNumber}%}
+					loop {Team.%{_TeamNumber}%::*}:
+						message "{@P} Your team was deleted." to ("%loop-value%" parsed as offlineplayer)
+						delete {Teams.InTeam::%loop-value%}
+					delete {Team.%{_TeamNumber}%::*}
+					command "/scoreboard teams remove UHC%{_TeamNumber}%"
+					
+					message "{@P} Deleted Team §6%{_TeamNumber}%"
+					loop all players:
+						loop-player has the permission "teams.delete.notify"
+						loop-player is not command sender
+						message "{@P} {@N} Deleted Team §6%{_TeamNumber}%" to loop-player
+						
+						
+					
+		else if arg 1 is equal to "join":
+			if command sender does not have the permission "teams.join":
+				message "{@P} §4Permission denied. §r(missing ""teams.join"")"
+			else if arg 2 is not set:
+				message "{@P} {@IS}"
+			else if arg 4 is set:
+				message "{@P} {@IS}"
+			else:
+				set {_TeamNumber} to ("%arg 2%" parsed as integer)
+				if {_TeamNumber} is not set:
+					message "{@P} {@IS}"
+				else if {_TeamNumber} is smaller than 1:
+					message "{@P} Invalid Team Number!"
+				else if {Teams::%{_TeamNumber}%} is not set:
+					message "{@P} Team does not exist!"
+				else:
+					if arg 3 is not set:
+						if command sender is console:
+							message "{@P} {@IS}"
+							stop
+						set {_Player} to (name of command sender)
+					else:
+						set {_Player} to arg 3
+					
+					if {Teams.InTeam::%{_Player}%} is set:
+						message "{@P} Player %{_Player}% is already in a team!"
+					else:
+						loop {Team.%{_TeamNumber}%::*}:
+							set {_TeamPlayer} to ("%loop-value-1%" parsed as offlineplayer)
+							if {_TeamPlayer} is online:
+								message "{@P} §6%{_Player}% §rhas been added to your team." to {_TeamPlayer}
+						
+						set {Teams.InTeam::%{_Player}%} to {_TeamNumber}
+						add {_Player} to {Team.%{_TeamNumber}%::*}
+						command "/scoreboard teams join UHC%{_TeamNumber}% %{_Player}%"
+						
+						message "{@P} You were added to §6Team %{_TeamNumber}%" to ("%{_Player}%" parsed as offlineplayer)
+						message "{@P} Added §c%{_Player}% §rto Team §6%{_TeamNumber}%"
+						loop all players:
+							loop-player has the permission "teams.join.notify"
+							loop-player is not command sender
+							message "{@P} {@N} Added §c%{_Player}% §rto Team §6%{_TeamNumber}%" to loop-player
+							
+							
+		
+		else if arg 1 is equal to "leave":
+			if command sender does not have the permission "teams.leave":
+				message "{@P} §4Permission denied. §r(missing ""teams.leave"")"
+			else if arg 3 is set:
+				message "{@P} {@IS}"
+			else:
+				if arg 2 is not set:
+					if command sender is console:
+						message "{@P} {@IS}"
+						stop
+					set {_Player} to (name of command sender)
+				else:
+					set {_Player} to arg 2
+					
+				if {Teams.InTeam::%{_Player}%} is not set:
+					message "{@P} Player %{_Player}% is not in a team!"
+				else:
+					set {_TeamNumber} to {Teams.InTeam::%{_Player}%}
+					delete {Teams.InTeam::%{_Player}%}
+					remove {_Player} from {Team.%{_TeamNumber}%::*}
+					command "/scoreboard teams leave %{_Player}%"
+					
+					loop {Team.%{_TeamNumber}%::*}:
+						set {_TeamPlayer} to ("%loop-value-1%" parsed as offlineplayer)
+						if {_TeamPlayer} is online:
+							message "{@P} §6%{_Player}% §rhas been removed from your team." to {_TeamPlayer}
+								
+					message "{@P} You were removed from §6Team %{_TeamNumber}%" to ("%{_Player}%" parsed as offlineplayer)
+					message "{@P} Removed §c%{_Player}% §rfrom Team §6%{_TeamNumber}%"
+					loop all players:
+						loop-player has the permission "teams.join.notify"
+						loop-player is not command sender
+						message "{@P} {@N} Removed §c%{_Player}% §rfrom Team §6%{_TeamNumber}%" to loop-player
+						
+				
+				
+		else if arg 1 is equal to "color":
+			if command sender does not have the permission "teams.color":
+				message "{@P} §4Permission denied. §r(missing ""teams.color"")"
+			else if arg 2 is set:
+				message "{@P} {@IS}"
+			else if {Teams::*} is not set:
+				message "{@P} No teams to color!"
+			else if (size of {Teams::*}) is bigger than 20:
+				message "{@P} Too many teams to color!"
+			else:
+				if (size of {Teams::*}) is smaller than 16:
+					set {_Colors::*} to "aqua", "black", "blue", "dark_aqua", "dark_blue", "dark_gray", "dark_green", "dark_purple", "dark_red", "gold", "gray", "green", "light_purple", "red" and "yellow"
+				else if (size of {Teams::*}) is smaller than 20:
+					set {_Colors::*} to "aqua", "black", "blue", "bold", "dark_aqua", "dark_blue", "dark_gray", "dark_green", "dark_purple", "dark_red", "gold", "gray", "green", "italic", "light_purple", "red", "strikethrough", "underline" and "yellow"
+				else:
+					set {_Colors::*} to "aqua", "black", "blue", "bold", "dark_aqua", "dark_blue", "dark_gray", "dark_green", "dark_purple", "dark_red", "gold", "gray", "green", "italic", "light_purple", "red", "strikethrough", "underline", "white" and "yellow"
+				loop {Teams::*}:
+					set {_Color} to (random element out of {_Colors::*})
+					remove {_Color} from {_Colors::*}
+					command "/scoreboard teams option UHC%loop-value% color %{_Color}%"
+					replace all "_" with " " in {_Color}
+					loop {Team.%loop-value%::*}:
+						message "{@P} Your Team color is <%{_Color}%>%{_Color}%§r!" to ("%loop-value-2%" parsed as offlineplayer)
+					
+				message "{@P} Colored all teams"
+				loop all players:
+					loop-player has the permission "teams.color.notify"
+					loop-player is not command sender
+					message "{@P} {@N} Colored all teams" to loop-player
+		
+
+		
+		else if arg 1 is equal to "uncolor":
+			if command sender does not have the permission "teams.uncolor":
+				message "{@P} §4Permission denied. §r(missing ""teams.uncolor"")"
+			else if arg 2 is set:
+				message "{@P} {@IS}"
+			else if {Teams::*} is not set:
+				message "{@P} No teams to uncolor!"
+			else:
+				loop {Teams::*}:
+					command "/scoreboard teams option UHC%loop-value% color reset"
+					loop {Team.%loop-value%::*}:
+						message "{@P} Your Team color was removed." to ("%loop-value-2%" parsed as offlineplayer)
+					
+				message "{@P} Uncolored all teams"
+				loop all players:
+					loop-player has the permission "teams.uncolor.notify"
+					loop-player is not command sender
+					message "{@P} {@N} Uncolored all teams" to loop-player
+					
+					
+					
+		else if arg 1 is equal to "solos":
+			if command sender does not have the permission "teams.solos":
+				message "{@P} §4Permission denied. §r(missing ""teams.solos"")"
+			else if arg 2 is set:
+				message "{@P} {@IS}"
+			else:
+				loop all players:
+					{Teams.InTeam::%loop-player%} is not set
+					add (name of loop-player) to {_Solos::*}
+					
+				if {_Solos::*} is not set:
+					message "{@P} There are no solos!"
+				else:
+					message "{@P} Solos: %join {_Solos::*} with "", ""%"
+					
+					
+					
+		else if arg 1 is equal to "soloinform":
+			if command sender does not have the permission "teams.soloinform":
+				message "{@P} §4Permission denied. §r(missing ""teams.soloinform"")"
+			else if arg 2 is set:
+				message "{@P} {@IS}"
+			else:
+				loop all players:
+					loop-player is not command sender
+					if {Teams.InTeam::%loop-player%} is not set:
+						command "/playsound note.pling %loop-player%"
+						message "{@P} §4Warning! §rYou are not yet in a team." to loop-player
+						message "{@P} If you have a set team, please re-§4/helpop §rit." to loop-player
+						message "{@P} If you are solo, please ""§4/helpop I am solo§r""." to loop-player
+					if loop-player has the permission "teams.soloinform.notify":
+						message "{@P} {@N} Informed Solos" to loop-player
+				message "{@P} Informed Solos"
+					
+					
+		else if arg 1 is equal to "tpbox":
+			if command sender does not have the permission "teams.tpbox":
+				message "{@P} §4Permission denied. §r(missing ""teams.tpbox"")"
+			else if arg 2 is set:
+				message "{@P} {@IS}"
+			else if (size of {TeamBoxWarps::*}) is smaller than (size of {Teams::*}):
+				message "{@P} Too less warps!"
+			else:
+				set {_Count} to 0
+				loop {Teams::*}:
+					increase {_Count} by 1
+					loop {Team.%loop-value%::*}:
+						teleport ("%loop-value-2%" parsed as offlineplayer) to {TeamBoxWarps::%{_Count}%}
+				
+				message "{@P} Teleported Teams in Boxes"
+				loop all players:
+					loop-player has the permission "teams.tpbox.notify"
+					loop-player is not command sender
+					message "{@P} {@N} Teleported Teams in Boxes" to loop-player
+					
+					
+		else if arg 1 is equal to "setboxwarp":
+			if command sender is console:
+				message "{@P} {@IS}"
+			if command sender does not have the permission "teams.setboxwarp":
+				message "{@P} §4Permission denied. §r(missing ""teams.setboxwarp"")"
+			else if arg 2 is not set:
+				message "{@P} {@IS}"
+			else if arg 3 is set:
+				message "{@P} {@IS}"
+			else:
+				set {_WarpNumber} to ("%arg 2%" parsed as integer)
+				if {_WarpNumber} is not set:
+					message "{@P} {@IS}"
+				else if {_WarpNumber} is smaller than 1:
+					message "{@P} {@IS}"
+				else:
+					if {_WarpNumber} is not equal to 1:
+						set {_TestWarpNumber} to {_WarpNumber}-1
+						if {TeamBoxWarps::%{_TestWarpNumber}%} is not set:
+							message "{@P} The previous warp %{_TestWarpNumber}% is not set!"
+							stop
+					
+					
+					set {TeamBoxWarps::%{_WarpNumber}%} to (location of (block at command sender))
+					message "{@P} Configured Warp %{_WarpNumber}% to %{TeamBoxWarps::%{_WarpNumber}%}%"
+					
+					
+					
+		else if arg 1 is equal to "rebuild":
+			if command sender does not have the permission "teams.rebuild":
+				message "{@P} §4Permission denied. §r(missing ""teams.rebuild"")"
+			else if arg 2 is set:
+				message "{@P} {@IS}"
+			else:
+				set {_TeamCount} to 0
+				delete {Teams.InTeam::*}
+				loop {Teams::*}:
+					if (size of {Team.%loop-value%::*}) is not equal to 0:
+						message "%loop-value%"
+						set {_TeamCount} to {_TeamCount}+1
+						set {_New.Team.%{_TeamCount}%::*} to {Team.%loop-value%::*}
+						set {_New.Teams::%{_TeamCount}%} to {_TeamCount}
+					delete {Team.%loop-value%::*}
+					command "/scoreboard teams remove UHC%loop-value%"
+				
+				delete {Teams::*}
+				set {Teams::*} to {_New.Teams::*}
+				loop {Teams::*}:
+					command "/scoreboard teams add UHC%loop-value%"
+					set {Team.%loop-value%::*} to {_New.Team.%loop-value%::*}
+					loop {Team.%loop-value%::*}:
+						set {Teams.InTeam::%loop-value-2%} to loop-value-1
+						command "/scoreboard teams join UHC%loop-value-1% %loop-value-2%"
+				
+				message "{@P} Issued Rebuild"				
+				loop all players:
+					loop-player has the permission "teams.rebuild.notify"
+					loop-player is not command sender
+					message "{@P} {@N} Issued Rebuild" to loop-player
+		
+		
+		else if arg 1 is equal to "random":
+			if command sender does not have the permission "teams.random":
+				message "{@P} §4Permission denied. §r(missing ""teams.random"")"
+			else if arg 2 is not set:
+				message "{@P} {@IS}"
+			else if arg 3 is not set:
+				message "{@P} {@IS}"
+			else:
+				set {_TeamSize} to ("%arg 2%" parsed as integer)
+				set {_TeamAmount} to ("%arg 3%" parsed as integer)
+				if {_TeamSize} is not set:
+					message "{@P} {@IS}"
+				else if {_TeamAmount} is not set:
+					message "{@P} {@IS}"
+				else if {_TeamSize} is less than 1:
+					message "{@P} {@IS}"
+				else if {_TeamAmount} is less than 1:
+					message "{@P} {@IS}"
+				else:
+					loop all players:
+						{Teams.InTeam::%loop-player%} is not set
+						add (name of loop-player) to {_Players::*}
+						
+					if ({_TeamSize}*{_TeamAmount}) is not equal to (size of {_Players::*}):
+						message "{@P} The amount of people does not match."
+					else:
+						loop {Teams::*}:
+							command "/scoreboard teams remove UHC%loop-value%"
+							delete {Team.%loop-value%::*}
+						delete {Teams.InTeam::*}
+						delete {Teams::*}
+						
+						broadcast "{@P} Randomizing §6%arg 3% teams §cof %arg 2%§r..."
+						loop all players:
+							command "/playsound note.harp %loop-player%"
+						wait 10 ticks
+						
+						loop {_TeamAmount} times:
+							command "/scoreboard teams add UHC%loop-number%"
+							set {Teams::%loop-number%} to loop-number
+							loop {_TeamSize} times:
+								set {_Player} to (random element out of {_Players::*})
+								remove {_Player} from {_Players::*}
+								command "/scoreboard teams join UHC%loop-number-1% %{_Player}%"
+								add {_Player} to {Team.%loop-number-1%::*}
+								set {Teams.InTeam::%{_Player}%} to loop-number-1
+								
+						loop {Teams::*}:
+							loop {Team.%loop-value%::*}:
+								set {_Player} to ("%loop-value-2%" parsed as offlineplayer)
+								if {_Player} is online:
+									message "{@P} §6Your team!" to {_Player}
+									loop {Team.%loop-value-1%::*}:
+										loop-value-3 is not equal to loop-value-2
+										message "{@P} §7§l- §c§o%loop-value-3%" to {_Player}
+						
+						if arg 4 is set:
+							if arg 4 is equal to "extend":
+								set {_Extend} to true
+								
+						if {_Extend} is not set:
+							broadcast "{@P} §7Teams are randomized!"
+						else:
+							broadcast "{@P} §fTeams are randomized! §c§lGet into Teamspeak!"
+							broadcast "{@P} §fThe IP is §6§nts.publicuhc.com§f."
+							broadcast "{@P} §3Channel Info: §fIf one of your teammembers has a"
+							broadcast "{@P} ""§3verified§f"" Teamspeak account, he can create a"
+							broadcast "{@P} §7private channel §ffor your team. If not, please"
+							broadcast "{@P} §cask an operator §fvia §4/helpop §fto create a channel"
+							broadcast "{@P} §ffor your team. §3§lUse §2§l/pm §3§lto communicate."
+						loop all players:
+							command "/playsound random.explode %loop-player%"
+							
+									
+									
+									
+									
+		
+		
+		
+		
+		else if arg 1 is equal to "reset":
+			if command sender does not have the permission "teams.reset":
+				message "{@P} §4Permission denied. §r(missing ""teams.reset"")"
+			else if arg 2 is set:
+				message "{@P} {@IS}"
+			else:
+				loop {Teams::*}:
+					loop {Team.%loop-value%::*}:
+						message "{@P} Your team was deleted in a global reset." to ("%loop-value-2%" parsed as offlineplayer)
+					command "/scoreboard teams remove UHC%loop-value%"
+					delete {Team.%loop-value%::*}
+				delete {Teams::*}
+				delete {Teams.InTeam::*}
+				
+				message "{@P} All teams reset"
+				loop all players:
+					loop-player has the permission "teams.reset.notify"
+					loop-player is not command sender
+					message "{@P} {@N} Reset all teams" to loop-player
+		
+		
+					
+		else:
+			command sender command "/team help"
+		
+		
+command /pm <text>:
+	executable by: players
+	trigger:
+		if {Teams.InTeam::%command sender%} is not set:
+			message "{@P} You are not in a team!"
+		else:
+			set {_Team} to {Teams.InTeam::%command sender%}
+			loop all players:
+				if {Teams.InTeam::%loop-player%} is equal to {_Team}:
+					message "§f[§7§lTEAM§f] §e§o%command sender%§r: %arg 1%" to loop-player
+				else if {PMSocialSpy::%loop-player%} is true:
+					message "§f[§7§lPMS§f] §9[§f%{_Team}%§9] §e§o%command sender%§r: %arg 1%" to loop-player
+				
+command /fpm <text> <text>:
+	permission: skript.forcepm
+	usage: /fpm <team number/player> <text>
+	trigger:
+		set {_Number} to ("%arg 1%" parsed as integer)
+		if {_Number} is set:
+			if {Teams::%arg 1%} is not set:
+				message "Team %arg 1% not defined."
+			else:
+				loop all players:
+					{Teams.InTeam::%loop-player%} is equal to {_Number}
+					message "§f[§7§lTEAM§f] §4§o%command sender%§r: %arg 1%" to loop-player
+		else:
+			if {Teams.InTeam::%arg 1%} is not set:
+				message "Player %arg 1% not in a team."
+			else:
+				loop all players:
+					{Teams.InTeam::%loop-player%} is equal to {Teams.InTeam::%arg 1%}
+					message "§f[§7§lTEAM§f] §4§o%command sender%§r: %arg 1%" to loop-player	
+				
+command /pms:
+	permission: skript.pm.socialspy
+	trigger:
+		if {PMSocialSpy::%command sender%} is not set:
+			set {PMSocialSpy::%command sender%} to true
+			message "Team Socialspy now on"
+		else:
+			delete {PMSocialSpy::%command sender%}
+			message "Team Socialspy now off"
+			
+			
+			
+command /ct <text> <text> [<text>] [<text>] [<text>] [<text>]:
+	permission: teams.createteam
+	usage: /ct <players> [up to 6]
+	trigger:
+		add (arg 1) to {_ThisTeam::*}
+		add (arg 2) to {_ThisTeam::*}
+		if arg 3 is set:
+			add (arg 3) to {_ThisTeam::*}
+			if arg 4 is set:
+				add (arg 4) to {_ThisTeam::*}
+				if arg 5 is set:
+					add (arg 5) to {_ThisTeam::*}
+					if arg 6 is set:
+						add (arg 6) to {_ThisTeam::*}
+						
+		loop {_ThisTeam::*}:
+			{Teams.InTeam::%loop-value%} is set
+			add loop-value to {_AlreadyOnTeam::*}
+			
+		if {_AlreadyOnTeam::*} is set:
+			message "{@P} The following players are already on a team."
+			message "{@P} %join {_AlreadyOnTeam::*} with "", ""%"
+		else:
+			set {_TeamNumber} to 1
+			while {Teams::%{_TeamNumber}%} is set:
+				set {_TeamNumber} to {_TeamNumber}+1
+			
+			set {Teams::%{_TeamNumber}%} to {_TeamNumber}
+			command "/scoreboard teams add UHC%{_TeamNumber}%"
+			loop {_ThisTeam::*}:
+				set {Teams.InTeam::%loop-value%} to {_TeamNumber}
+				add "%loop-value%" to {Team.%{_TeamNumber}%::*}
+				command "/scoreboard teams join UHC%{_TeamNumber}% %loop-value%"	
+			
+			set {_Buffer} to ""
+			loop {_ThisTeam::*}:
+				set {_Player} to ("%loop-value%" parsed as offlineplayer)
+				if {_Player} is online:
+					set {_Buffer} to "%{_Buffer}%§a%loop-value% "
+				else:
+					set {_Buffer} to "%{_Buffer}%§c%loop-value% "
+					command "/whitelist add %loop-value%"
+					
+			loop {_ThisTeam::*}:
+				set {_Player} to ("%loop-value%" parsed as offlineplayer)
+				command "/playsound note.pling %loop-value%"
+				message "{@P} You have been put on a team with the following people!" to {_Player}
+				message "{@P} %{_Buffer}%" to {_Player}
+				message "{@P} Names in §cred §rare offline, but have been whitelisted!" to {_Player}
+				message "{@P} §6§oMistake? §c§lImmediately ""§4/helpop WRONG TEAM!§c""!" to {_Player}
+				
+			message "{@P} Created a team with the following members:"
+			message "{@P} %{_Buffer}%"
+			loop all players:
+				loop-player has the permission "teams.createteam.notify"
+				loop-player is not command sender
+				message "{@P} {@N} Created team with members:" to loop-player
+				message "{@P} %{_Buffer}%" to loop-player
+		
+on command:
+	command is equal to "scoreboard"
+	substring of (full command) from 1 to 16 is equal to "scoreboard teams"
+	command sender is not console
+	cancel the event
+	if command sender does not have the permission "team.showhandler":
+		message "§cI'm sorry, but you do not have the permission to perform this command. Please contact the server administrators if you believe that this is in error."
+	else:
+		message "You dumbie. §9Use the team handler. §b/team help"					
