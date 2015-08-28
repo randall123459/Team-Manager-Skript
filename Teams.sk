@@ -4,6 +4,18 @@ Options:
   P:
   C:
   H:
+  
+#Team management
+command /team <text>:
+		else if arg-1 is "create":
+			if {teams} is true:
+				if {team::inteam::%player%} is set:
+					message "{@P} Sorry, you are already in a team, if you wish to leave the team do /team leave"
+				else if {team::inteam::%player%} is not set:
+					add 1 to {team:teamcount}
+					set {team::teamcount} to {_TeamNumber}
+					command "/scoreboard teams add UHC%{_TeamNumber}%"
+					
 
 command /pm <text>:
 	usage: /pm <message>
